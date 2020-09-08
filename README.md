@@ -24,7 +24,7 @@ Use a production WSGI server instead.
 
 From a client:
 
-``bash
+```bash
 $ curl -s http://localhost:10102 2>&1 | tail -3
 ambientweather_dewPoint{macAddress="REDACTED",name="CLOUDMASON",lat="REDACTED",lon="REDACTED",address="REDACTED",location="REDACTED",tz="America/Detroit"} 53.01
 ambientweather_feelsLikein{macAddress="REDACTED",name="CLOUDMASON",lat="REDACTED",lon="REDACTED",address="REDACTED",location="REDACTED",tz="America/Detroit"} 67.3
