@@ -12,6 +12,8 @@ app = Flask(__name__)
 
 applicationKey = os.getenv('AMBI_APP_KEY')
 apiKey         = os.getenv('AMBI_API_KEY')
+influxHost     = os.getenv('INFLUX_HOST', 'influxdb')
+influxPort     = os.getenv('INFLUX_PORT', '8086')
 
 
 @app.route('/')
@@ -23,7 +25,13 @@ def prometheus():
 @app.route('/influx')
 @app.route('/influxdb')
 def influx():
-    return(ambientweatherInflux())
+    data = ambientweatherInflux()
+    for row in data:
+        try:
+            r = requests.post(f'http://{influxHost}:{influxPort}/write', data=row)
+        except Exception as e:
+            print(e)
+            sys.exit(1)
 
 
 def getData():
