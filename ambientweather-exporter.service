@@ -1,0 +1,16 @@
+[Unit]
+Description=AmbientWeather Prometheus Exporter
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=nobody
+Environment=AMBI_APP_KEY=...
+Environment=AMBI_API_KEY=...
+ExecStart=/usr/local/bin/ambientweather-exporter.py
+
+[Install]
+WantedBy=multi-user.target
