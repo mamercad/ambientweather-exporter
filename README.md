@@ -30,3 +30,106 @@ ambientweather_dewPoint{macAddress="REDACTED",name="CLOUDMASON",lat="REDACTED",l
 ambientweather_feelsLikein{macAddress="REDACTED",name="CLOUDMASON",lat="REDACTED",lon="REDACTED",address="REDACTED",location="REDACTED",tz="America/Detroit"} 67.3
 ambientweather_dewPointin{macAddress="REDACTED",name="CLOUDMASON",lat="REDACTED",lon="REDACTED",address="REDACTED",location="REDACTED",tz="America/Detroit"} 49.6
 ```
+
+## Grafana:
+
+![Screenshot](ambientweather-screenshot.png)
+
+Panel JSON:
+
+```json
+{
+  "fieldConfig": {
+    "defaults": {
+      "custom": {},
+      "unit": "fahrenheit",
+      "min": 0,
+      "max": 100,
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": null
+          },
+          {
+            "color": "super-light-blue",
+            "value": 10
+          },
+          {
+            "color": "light-blue",
+            "value": 20
+          },
+          {
+            "color": "semi-dark-blue",
+            "value": 30
+          },
+          {
+            "color": "super-light-green",
+            "value": 40
+          },
+          {
+            "color": "light-green",
+            "value": 50
+          },
+          {
+            "color": "dark-green",
+            "value": 60
+          },
+          {
+            "color": "light-orange",
+            "value": 70
+          },
+          {
+            "color": "semi-dark-orange",
+            "value": 80
+          },
+          {
+            "color": "dark-orange",
+            "value": 90
+          },
+          {
+            "color": "dark-red",
+            "value": 100
+          }
+        ]
+      },
+      "mappings": []
+    },
+    "overrides": []
+  },
+  "gridPos": {
+    "h": 9,
+    "w": 6,
+    "x": 0,
+    "y": 0
+  },
+  "id": 2,
+  "options": {
+    "reduceOptions": {
+      "values": false,
+      "calcs": [
+        "last"
+      ],
+      "fields": ""
+    },
+    "showThresholdLabels": true,
+    "showThresholdMarkers": true
+  },
+  "pluginVersion": "7.1.5",
+  "targets": [
+    {
+      "expr": "ambientweather_feelsLike",
+      "interval": "",
+      "legendFormat": " ",
+      "refId": "A"
+    }
+  ],
+  "timeFrom": null,
+  "timeShift": null,
+  "title": "Feels Like",
+  "transparent": true,
+  "type": "gauge",
+  "datasource": null
+}
+```
