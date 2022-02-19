@@ -2,9 +2,9 @@
 build:
 	docker build -t ambientweather-exporter:latest .
 
-.PHONY: run
-run:
-	docker run --rm -p 10102:10102/tcp ambientweather-exporter:latest
+.PHONY: compose
+compose:
+	docker-compose up
 
 .PHONY: install
 install:
