@@ -14,4 +14,5 @@ services:
       AMBI_API_KEY: ${AMBI_API_KEY}
       INFLUX_HOST: ${INFLUX_HOST:-influxdb}
       INFLUX_PORT: ${INFLUX_PORT:-8086}
+      INFLUX_DB: ${INFLUX_DB:-ambientweather}
       EXPORTER_PORT: ${EXPORTER_PORT:-10102}

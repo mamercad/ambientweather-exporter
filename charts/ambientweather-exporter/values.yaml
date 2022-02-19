@@ -9,3 +9,8 @@ service:
 secret:
   ambi_app_key: hunter2
   ambi_api_key: hunter2
+
+influx:
+  host: influxdb
+  port: 8086
+  db: ambientweather
