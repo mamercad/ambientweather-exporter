@@ -40,8 +40,28 @@ Once Helm has been set up correctly, add the repo as follows:
 
 ```bash
 helm repo add ambientweather-exporter https://mamercad.github.io/ambientweather-exporter/
+```
+
+Update Helm repos:
+
+```bash
 helm repo update
+```
+
+Let's find our exporter:
+
+```bash
 helm search repo ambientweather-exporter
+```
+
+Let's install our exporter:
+
+```bash
+helm install my-ambientweather-exporter \
+  --namespace ambientweather --create-namespace \
+  --set secrets.ambi_app_key="$AMBI_APP_KEY" \
+  --set secrets.ambi_api_key="$AMBI_API_KEY" \
+  ambientweather-exporter/ambientweather-exporter
 ```
 
 If you had already added this repo earlier, run `helm repo update` to retrieve
