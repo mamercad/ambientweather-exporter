@@ -1,6 +1,10 @@
 .PHONY: build
 build:
-	docker build -t ambientweather-exporter:latest .
+	docker build -t ghcr.io/mamercad/ambientweather-exporter:latest .
+
+.PHONY: push
+push:
+	docker push ghcr.io/mamercad/ambientweather-exporter:latest
 
 .PHONY: compose
 compose:
