@@ -1,6 +1,6 @@
 # ambientweather-exporter
 
-Simple Python/Flask exporter for [AmbientWeather](https://ambientweather.net) that can be scraped by [Prometheus](https://prometheus.io). With that said, you'll need `flask` installed. I've also added support for pushing to [InfluxDB](https://www.influxdata.com/products/influxdb-overview/), but, I haven't tested it, let me know (you can set `$INFLUX_HOST` and `$INFLUX_PORT` to override the defaults, `influxdb` and `8086`, respectively). The endpoints `/influx` or `/influxdb` will trigger the sending.
+Simple Python/Flask exporter for [AmbientWeather](https://ambientweather.net) that can be scraped by [Prometheus](https://prometheus.io). With that said, you'll need `flask` installed. I've also added support for pushing to [InfluxDB](https://www.influxdata.com/products/influxdb-overview/), but, I haven't tested it, let me know (you can set `$INFLUX_HOST`, `$INFLUX_PORT`, and `$INFLUX_DB` to override the defaults, `influxdb`, `8086`, `ambientweather`, respectively). The endpoints `/influx` or `/influxdb` will trigger the sending.
 
 ## Environment variables
 
