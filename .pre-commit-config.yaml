@@ -1,4 +1,9 @@
-exclude: ^charts/$
+exclude: |
+  (?x)(
+    ^charts/|
+    ^charts/ambientweather|
+    ^charts/ambientweather/templates|
+  )
 
 repos:
 
