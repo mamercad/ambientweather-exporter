@@ -2,8 +2,7 @@ name: helm-release
 
 on:
   push:
-    branches:
-      - helm
+    branches: [main]
 
 jobs:
   release:
