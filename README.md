@@ -40,11 +40,13 @@ Once Helm has been set up correctly, add the repo as follows:
 
 ```bash
 helm repo add ambientweather-exporter https://mamercad.github.io/ambientweather-exporter/
+helm repo update
+helm search repo ambientweather-exporter
 ```
 
 If you had already added this repo earlier, run `helm repo update` to retrieve
 the latest versions of the packages.  You can then run `helm search repo
-awx-operator` to see the charts.
+ambientweather-exporter` to see the charts.
 
 To install the `ambientweather-exporter` chart:
 
@@ -55,7 +57,7 @@ helm install my-ambientweather-exporter ambientweather-exporter/ambientweather-e
 To uninstall the chart:
 
 ```bash
-helm delete my-awx-operator
+helm delete my-ambientweather-exporter
 ```
 
 ## Grafana
