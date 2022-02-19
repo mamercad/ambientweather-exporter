@@ -1,0 +1,9 @@
+deployment:
+  image: docker.io/mamercad/ambientweather-exporter
+  tag: latest
+
+service:
+  type: LoadBalancer
+
+env:
+  EXPORTER_PORT: 10102
