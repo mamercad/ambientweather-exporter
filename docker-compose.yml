@@ -6,7 +6,7 @@ services:
       - "8086:8086"
 
   exporter:
-    image: ambientweather-exporter:latest
+    image: ghcr.io/mamercad/ambientweather-exporter:latest
     ports:
       - "${EXPORTER_PORT:-10102}:${EXPORTER_PORT:-10102}"
     environment:
