@@ -27,4 +27,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: false
-          tags: ambientweather-exporter:pr-${{ github.event.pull_request.number }}
+          tags: |
+            mamercad/ambientweather-exporter:pr-${{ github.event.pull_request.number }}
+            ghcr.io/mamercad/ambientweather-exporter:pr-${{ github.event.pull_request.number }}
