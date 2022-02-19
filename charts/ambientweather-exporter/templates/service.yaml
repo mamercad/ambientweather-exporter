@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}"
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  selector:
+    deploy: "{{ .Release.Name }}"
+  ports:
+  - name: exporter
+    port: "{{ .Values.env.EXPORTER_PORT }}"
+    protocol: TCP
+    targetPort: "{{ .Values.env.EXPORTER_PORT }}"
+  sessionAffinity: None
+  type: "{{ .Values.service.type }}"
