@@ -1,3 +1,10 @@
+exclude: |
+  (?x)(
+    ^charts/|
+    ^charts/ambientweather|
+    ^charts/ambientweather/templates|
+  )
+
 repos:
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

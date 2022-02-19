@@ -4,6 +4,8 @@ deployment:
 
 service:
   type: LoadBalancer
+  exporter_port: 10102
 
-env:
-  EXPORTER_PORT: 10102
+secret:
+  ambi_app_key: hunter2
+  ambi_api_key: hunter2

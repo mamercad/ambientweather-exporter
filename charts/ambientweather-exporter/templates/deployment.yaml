@@ -5,7 +5,7 @@ metadata:
   namespace: "{{ .Release.Namespace }}"
   labels:
     deploy: "{{ .Release.Name }}"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace '+' '_' }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
   replicas: 1
   strategy:
@@ -23,11 +23,17 @@ spec:
           image: "{{ .Values.deployment.image }}:{{ .Values.deployment.tag }}"
           ports:
             - name: http
-              containerPort: "{{ .Values.env.EXPORTER_PORT }}"
+              containerPort: {{ .Values.service.exporter_port }}
           env:
             - name: AMBI_APP_KEY
-              value: "{{ .Values.env.AMBI_APP_KEY }}"
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-creds"
+                  key: AMBI_APP_KEY
             - name: AMBI_API_KEY
-              value: "{{ .Valuels.env.AMBI_API_KEY }}"
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-creds"
+                  key: AMBI_API_KEY
             - name: EXPORTER_PORT
-              value: "{{ .Values.env.EXPORTER_PORT }}"
+              value: "{{ .Values.service.exporter_port }}"

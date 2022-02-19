@@ -5,14 +5,14 @@ metadata:
   namespace: "{{ .Release.Namespace }}"
   labels:
     deploy: "{{ .Release.Name }}"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace '+' '_' }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
   selector:
     deploy: "{{ .Release.Name }}"
   ports:
   - name: exporter
-    port: "{{ .Values.env.EXPORTER_PORT }}"
+    port: {{ .Values.service.exporter_port }}
     protocol: TCP
-    targetPort: "{{ .Values.env.EXPORTER_PORT }}"
+    targetPort: {{ .Values.service.exporter_port }}
   sessionAffinity: None
   type: "{{ .Values.service.type }}"
