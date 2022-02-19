@@ -39,25 +39,40 @@ Helm's [documentation](https://helm.sh/docs) to get started.
 Once Helm has been set up correctly, add the repo as follows:
 
 ```bash
-helm repo add ambientweather-exporter https://mamercad.github.io/ambientweather-exporter/
-helm repo update
-helm search repo ambientweather-exporter
+$ helm repo add ambientweather-exporter https://mamercad.github.io/ambientweather-exporter/
+"ambientweather-exporter" has been added to your repositories
 ```
 
-If you had already added this repo earlier, run `helm repo update` to retrieve
-the latest versions of the packages.  You can then run `helm search repo
-ambientweather-exporter` to see the charts.
-
-To install the `ambientweather-exporter` chart:
+Update Helm repositories:
 
 ```bash
-helm install my-ambientweather-exporter ambientweather-exporter/ambientweather-exporter
+$ helm repo update | grep ambi
+...Successfully got an update from the "ambientweather-exporter" chart repository
 ```
 
-To uninstall the chart:
+Find the exporter:
 
 ```bash
-helm delete my-ambientweather-exporter
+$ helm search repo ambientweather-exporter
+NAME                                            CHART VERSION   APP VERSION     DESCRIPTION
+ambientweather-exporter/ambientweather-exporter 0.2.0           0.2.0           A Helm chart for the AmbientWeather Exporter
+```
+
+Install the exporter:
+
+```bash
+$ helm install my-ambientweather-exporter \
+  --namespace ambientweather --create-namespace \
+  --set secret.ambi_app_key="$AMBI_APP_KEY" \
+  --set secret.ambi_api_key="$AMBI_API_KEY" \
+  --set service.type="LoadBalancer" \
+  ambientweather-exporter/ambientweather-exporter
+NAME: my-ambientweather-exporter
+LAST DEPLOYED: Sat Feb 19 11:12:16 2022
+NAMESPACE: ambientweather
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
 ```
 
 ## Grafana
