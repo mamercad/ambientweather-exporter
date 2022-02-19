@@ -36,7 +36,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: false
-          tags: ambientweather-exporter:pr-${{ github.ref }}
+          tags: ambientweather-exporter:pr-${{ github.event.pull_request.number }}
       - uses: sarisia/actions-status-discord@v1
         if: always()
         with:
