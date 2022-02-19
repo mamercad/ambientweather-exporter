@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   ambientweather-exporter:
   - apiVersion: v2
+    appVersion: 0.2.0
+    created: "2022-02-19T15:50:54.765986291Z"
+    description: A Helm chart for the AmbientWeather Exporter
+    digest: 47cfa453a841a586b3a56cee03c2290a85de4b0bc059f6598530a0f529ec338f
+    name: ambientweather-exporter
+    type: application
+    urls:
+    - https://github.com/mamercad/ambientweather-exporter/releases/download/ambientweather-exporter-0.2.0/ambientweather-exporter-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
     appVersion: 0.1.0
     created: "2022-02-19T14:49:24.103475491Z"
     description: A Helm chart for the AmbientWeather Exporter
@@ -11,4 +21,4 @@ entries:
     urls:
     - https://github.com/mamercad/ambientweather-exporter/releases/download/ambientweather-exporter-0.1.0/ambientweather-exporter-0.1.0.tgz
     version: 0.1.0
-generated: "2022-02-19T14:49:24.103480292Z"
+generated: "2022-02-19T15:50:54.765993391Z"
