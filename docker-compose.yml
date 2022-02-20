@@ -5,13 +5,19 @@ services:
     ports:
       - "8086:8086"
 
-  exporter:
+  prom-exporter:
     image: ghcr.io/mamercad/ambientweather-exporter:latest
     ports:
       - "${LISTEN_PORT:-10102}:${LISTEN_PORT:-10102}"
     environment:
       LISTEN_ON: 0.0.0.0
       LISTEN_PORT: 10102
+      AMBI_APP_KEY: ${AMBI_APP_KEY}
+      AMBI_API_KEY: ${AMBI_API_KEY}
+
+  influx-exporter:
+    image: ghcr.io/mamercad/ambientweather-exporter:latest
+    environment:
       AMBI_APP_KEY: ${AMBI_APP_KEY}
       AMBI_API_KEY: ${AMBI_API_KEY}
       INFLUX_ENABLE: "True"
