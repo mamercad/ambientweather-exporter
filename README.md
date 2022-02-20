@@ -1,8 +1,9 @@
 # ambientweather-exporter
 
 Simple Python/Flask exporter for [AmbientWeather](https://ambientweather.net) for [Prometheus](https://prometheus.io/) and [InfluxDB](https://www.influxdata.com/).
-You can use it to pull and push metrics from your PWS.
+You can use it to pull (for Prometheus) and push (for InfluxDB) metrics from your personal weather station.
 You will need to set up [AmbientWeather](https://ambientweather.docs.apiary.io/#introduction/authentication) application and API keys.
+Take it easy on the AmbientWeather API; it's the weather, it doesn't change that quickly *smile* (you'll get a `429` if you hit their limits).
 
 
 ## Metrics (Prometheus)
@@ -81,6 +82,8 @@ INFO:werkzeug: * Debugger PIN: 999-984-877
 
 ## Docker
 
+Run a Prometheus exporter on `10102/tcp`:
+
 ```bash
 ❯ docker run -it -p 10102:10102/tcp \
     -e AMBI_APP_KEY=$AMBI_APP_KEY \
@@ -88,6 +91,24 @@ INFO:werkzeug: * Debugger PIN: 999-984-877
     mamercad/ambientweather-exporter:latest
 ...
 ```
+
+Run a InfluxDB shipper (every 900s):
+
+```bash
+❯ docker run -it \
+    -e AMBI_APP_KEY=$AMBI_APP_KEY \
+    -e AMBI_API_KEY=$AMBI_API_KEY \
+    -e INFLUX_ENABLE=True \
+    -e INFLUX_HOST=influxdb.example.com \
+    -e INFLUX_PORT=8086 \
+    -e INFLUX_INTERVAL=900
+    mamercad/ambientweather-exporter:latest
+...
+```
+
+## Docker Compose
+
+There is a [docker-compose.yml](./docker-compose.yml) to check out.
 
 ## Helm
 
