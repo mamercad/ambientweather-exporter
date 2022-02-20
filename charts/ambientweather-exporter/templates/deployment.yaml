@@ -25,6 +25,8 @@ spec:
             - name: http
               containerPort: {{ .Values.service.exporter_port }}
           env:
+            - name: LISTEN_ON
+              value: "0.0.0.0"
             - name: LISTEN_PORT
               value: "{{ .Values.service.exporter_port }}"
             - name: AMBI_APP_KEY
@@ -37,3 +39,15 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-creds"
                   key: AMBI_API_KEY
+{{ if .Values.influx.enable }}
+            - name: INFLUX_ENABLE
+              value: "true"
+            - name: INFLUX_HOST
+              value: "{{ .Values.influx.host }}"
+            - name: INFLUX_PORT
+              value: "{{ .Values.influx.port }}"
+            - name: INFLUX_DB
+              value: "{{ .Values.influx.db }}"
+            - name: INFLUX_INTERVAL
+              value: "{{ .Values.influx.interval }}"
+{{ end }}
