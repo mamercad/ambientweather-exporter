@@ -8,6 +8,7 @@ from pydoc import describe
 import requests
 import sys
 import time
+import urllib
 from flask import Flask
 
 
@@ -42,6 +43,21 @@ class FormatInflux(object):
                 )
         self.logger.info(f"Returning {len(influx_metrics)} metrics for Influx")
         return influx_metrics
+
+    def create_database(self):
+        self.logger.info(
+            f"Creating InfluxDB database {self.args.influx_host}:{self.args.influx_port}/{self.args.influx_db}"
+        )
+        self.logger.info(urllib.parse.quote(f"q=CREATE DATABASE ambientweather"))
+        r = requests.post(
+            f"http://{self.args.influx_host}:{self.args.influx_port}/query",
+            data={"q": f"CREATE DATABASE {self.args.influx_db}"},
+        )
+        status_code = r.status_code
+        if status_code != requests.codes.ok:
+            f"Got a {status_code} from InfluxDB at {self.args.influx_host}:{self.args.influx_port}/{self.args.influx_db}; creating the database"
+        else:
+            f"Created Influx database {self.args.influx_host}:{self.args.influx_port}/{self.args.influx_db}"
 
     def post_metrics(self):
         self.logger.info("Sending Influx metrics")
@@ -243,8 +259,8 @@ class RunServer(object):
             self.logger.info("Influx metrics requested")
             weather_data = self.aw.fetch_weather()
             influx = FormatInflux(self.logger, self.args, weather_data)
+            influx.create_database()
             metrics = influx.get_metrics()
-
             if self.args.influx_enable:
                 influx.post_metrics()
                 self.logger.info(f"Shipped {len(metrics)} metrics to Influx")
@@ -252,18 +268,6 @@ class RunServer(object):
             else:
                 self.logger.info(f"Influx is not enabled")
                 return "Influx is not enabled; run with --influx-enable\n"
-
-            # metrics = ambientweather_influx()
-            # logger.info(f"Shipped {len(metrics)} metrics to InfluxDB")
-            # for metric in metrics:
-            #     r = requests.post(
-            #         f"http://{influx_host}:{influx_port}/write?db={influx_db}", data=metric
-            #     )
-            #     status_code = r.status_code
-            #     if status_code != requests.codes.ok:
-            #         raise Exception(
-            #             f"Got a {status_code} from InfluxDB at {influx_host}:{influx_port}"
-            #         )
 
         self.logger.info("Starting server")
         self.app.run(debug=True, host=self.args.listen_on, port=self.args.listen_port)
@@ -273,14 +277,3 @@ if __name__ == "__main__":
     logger = SetupLogger()
     args = GetArgs()
     ws = RunServer(logger, args)
-
-    # logger.info(f"Listening on {listen_on}:{listen_port}")
-    # logger.info(
-    #     f"Prometheus metrics at http://{listen_on}:{listen_port} or http://{listen_on}:{listen_port}/metrics"
-    # )
-    # logger.info(f"InfluxDB destination set as {influx_host}:{influx_port}/{influx_db}")
-    # logger.info(
-    #     f"Trigger sending to InfluxDB with http://{listen_on}:{listen_port}/influx or http://{listen_on}:{listen_port}/influxdb"
-    # )
-
-    # app.run(debug=True, host=listen_on, port=int(listen_port))
