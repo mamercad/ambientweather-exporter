@@ -9,7 +9,7 @@ push: build
 	docker push ghcr.io/mamercad/ambientweather-exporter:latest
 
 .PHONY: compose
-compose:
+compose: build
 	docker compose up
 
 .PHONY: install
