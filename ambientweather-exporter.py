@@ -10,91 +10,61 @@ import sys
 import time
 from flask import Flask
 
-# listen_on = "0.0.0.0"
-# listen_port = os.getenv("EXPORTER_PORT", "10102")
 
-# ambi_app_key = os.getenv("AMBI_APP_KEY")
-# ambi_api_key = os.getenv("AMBI_API_KEY")
+class FormatInflux(object):
+    def __init__(self, logger, args, weather_data):
+        self.logger = logger
+        self.args = args
+        self.weather_data = weather_data
 
-# influx_enable = os.getenv("INFLUX_ENABLE", False)
-# influx_host = os.getenv("INFLUX_HOST", "influxdb")
-# influx_port = os.getenv("INFLUX_PORT", "8086")
-# influx_db = os.getenv("INFLUX_DB", "ambientweather")
-# influx_interval = os.getenv("INFLUX_INTERVAL", 300)
-
-# logging.basicConfig(
-#     stream=sys.stdout,
-#     level=logging.DEBUG,
-# )
-# logger = logging.getLogger("ambientweather-exporter")
-
-
-# def get_ambientweather_data():
-#     logger.info("Fetching data from AmbientWeather")
-#     global ambi_app_key, ambi_api_key
-#     r = requests.get(
-#         f"https://api.ambientweather.net/v0/devices?applicationKey={ambi_app_key}&apiKey={ambi_api_key}"
-#     )
-#     status_code = r.status_code
-#     if status_code != requests.codes.ok:
-#         raise Exception(
-#             f"Got a {status_code} from AmbientWeather; check your $AMBI_APP_KEY and $AMBI_API_KEY"
-#         )
-#     try:
-#         weather_data = r.json()
-#         if len(weather_data) == 0:
-#             logger.info("Got a row of data from AmbientWeather")
-#             return weather_data[-1]
-#         else:
-#             logger.error("Not expecting more than one row of data")
-#     except json.decoder.JSONDecodeError:
-#         logger.error("Could not decode AmbientWeather into JSON")
-#         raise
+    def get_metrics(self):
+        self.logger.info("Formatting Influx metrics")
+        influx_metrics = []
+        tagset = 'macAddress="{}",name="{}",lat="{}",lon="{}",address="{}",location="{}",tz="{}"'.format(
+            self.weather_data["macAddress"],
+            self.weather_data["info"]["name"],
+            self.weather_data["info"]["coords"]["coords"]["lat"],
+            self.weather_data["info"]["coords"]["coords"]["lon"],
+            self.weather_data["info"]["coords"]["address"],
+            self.weather_data["info"]["coords"]["location"],
+            self.weather_data["lastData"]["tz"],
+        )
+        for k in self.weather_data["lastData"].keys():
+            if k not in ["lastRain", "tz", "date"]:
+                influx_metrics.append(
+                    f"ambientweather_{k},{tagset} value={self.weather_data['lastData'][k]} {time.time_ns()}"
+                )
+        self.logger.info(f"Returning {len(influx_metrics)} metrics for Influx")
+        return influx_metrics
 
 
-# def ambientweather_prometheus():
-#     logger.info("Collecting Prometheus metrics")
-#     prom_data = []
-#     data = get_ambientweather_data()
-#     labels = 'macAddress="{}",name="{}",lat="{}",lon="{}",address="{}",location="{}",tz="{}"'.format(
-#         data["macAddress"],
-#         data["info"]["name"],
-#         data["info"]["coords"]["coords"]["lat"],
-#         data["info"]["coords"]["coords"]["lon"],
-#         data["info"]["coords"]["address"],
-#         data["info"]["coords"]["location"],
-#         data["lastData"]["tz"],
-#     )
-#     for k in data["lastData"].keys():
-#         if k not in ["lastRain", "tz", "date"]:
-#             prom_data.append(
-#                 "ambientweather_{}{{{}}} {}".format(k, labels, data["lastData"][k])
-#             )
-#     logger.info(f"Returning {len(prom_data)} metrics for Prometheus")
-#     return prom_data
+class FormatPrometheus(object):
+    def __init__(self, logger, args, weather_data):
+        self.logger = logger
+        self.args = args
+        self.weather_data = weather_data
 
-
-# def ambientweather_influx():
-#     logger.info("Collecting Influx metrics")
-#     influx_data = []
-#     data = get_ambientweather_data()
-#     tagset = 'macAddress="{}",name="{}",lat="{}",lon="{}",address="{}",location="{}",tz="{}"'.format(
-#         data["macAddress"],
-#         data["info"]["name"],
-#         data["info"]["coords"]["coords"]["lat"],
-#         data["info"]["coords"]["coords"]["lon"],
-#         data["info"]["coords"]["address"],
-#         data["info"]["coords"]["location"],
-#         data["lastData"]["tz"],
-#     )
-#     for k in data["lastData"].keys():
-#         if k not in ["lastRain", "tz", "date"]:
-#             influx_data.append(
-#                 f"ambientweather_{k},{tagset} value={data['lastData'][k]} {time.time_ns()}"
-#             )
-
-#     logger.info(f"Returning {len(influx_data)} metrics for Influx")
-#     return influx_data
+    def get_metrics(self):
+        self.logger.info("Formatting Prometheus metrics")
+        prom_metrics = []
+        labels = 'macAddress="{}",name="{}",lat="{}",lon="{}",address="{}",location="{}",tz="{}"'.format(
+            self.weather_data["macAddress"],
+            self.weather_data["info"]["name"],
+            self.weather_data["info"]["coords"]["coords"]["lat"],
+            self.weather_data["info"]["coords"]["coords"]["lon"],
+            self.weather_data["info"]["coords"]["address"],
+            self.weather_data["info"]["coords"]["location"],
+            self.weather_data["lastData"]["tz"],
+        )
+        for k in self.weather_data["lastData"].keys():
+            if k not in ["lastRain", "tz", "date"]:
+                prom_metrics.append(
+                    "ambientweather_{}{{{}}} {}".format(
+                        k, labels, self.weather_data["lastData"][k]
+                    )
+                )
+        self.logger.info(f"Returning {len(prom_metrics)} metrics for Prometheus")
+        return prom_metrics
 
 
 class AmbientWeather(object):
@@ -105,11 +75,13 @@ class AmbientWeather(object):
     def fetch_weather(self):
         self.logger.info("Fetching data from AmbientWeather")
         self.r = requests.get(
-            f"https://api.ambientweather.net/v0/devices?applicationKey={self.args.ambi_app_key}&apiKey={self.args.ambi_api_key}"
+            f"https://api.ambientweather.net/v1/devices?applicationKey={self.args.ambi_app_key}&apiKey={self.args.ambi_api_key}"
         )
         status_code = self.r.status_code
         if status_code != requests.codes.ok:
-            self.logger.error(f"Got a {status_code} from AmbientWeather; check your AmbientWeather application and API keys")
+            self.logger.error(
+                f"Got a {status_code} from AmbientWeather; check your AmbientWeather application and API keys"
+            )
         else:
             try:
                 weather_data = self.r.json()
@@ -117,7 +89,9 @@ class AmbientWeather(object):
                     self.logger.info("Got a row of data from AmbientWeather")
                     return weather_data[0]
                 else:
-                    self.logger.error(f"Didn't get a single result from AmbientWeather (got {len(weather_data)} results)")
+                    self.logger.error(
+                        f"Didn't get a single result from AmbientWeather (got {len(weather_data)} results)"
+                    )
             except json.decoder.JSONDecodeError:
                 self.logger.error("Could not decode AmbientWeather result into JSON")
                 raise
@@ -210,18 +184,22 @@ class RunServer(object):
         @self.app.route("/")
         @self.app.route("/metrics")
         def prometheus():
-            self.logger.info("metrics")
+            self.logger.info("Prometheus metrics requested")
             weather_data = self.aw.fetch_weather()
-            return "prometheus\n"
-            # metrics = ambientweather_prometheus()
-            # logger.info(f"Prometheus scraped {len(metrics)} metrics from us")
-            # return "\n".join(metrics) + "\n"
+            prom = FormatPrometheus(self.logger, self.args, weather_data)
+            metrics = prom.get_metrics()
+            self.logger.info(f"Prometheus scraped {len(metrics)} metrics from us")
+            return "\n".join(metrics) + "\n"
 
         @self.app.route("/influx")
         @self.app.route("/influxdb")
         def influx():
-            self.logger.info("influx")
-            return "influx\n"
+            self.logger.info("Influx metrics requested")
+            weather_data = self.aw.fetch_weather()
+            influx = FormatInflux(self.logger, self.args, weather_data)
+            metrics = influx.get_metrics()
+            self.logger.info(f"Shipped {len(metrics)} metrics to Influx")
+            return "\n".join(metrics) + "\n"
             # metrics = ambientweather_influx()
             # logger.info(f"Shipped {len(metrics)} metrics to InfluxDB")
             # for metric in metrics:
