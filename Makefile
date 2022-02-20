@@ -16,7 +16,7 @@ run: build
 	docker run -it -p 10102:10102/tcp \
 		-e AMBI_APP_KEY=$(AMBI_APP_KEY) \
 		-e AMBI_API_KEY=$(AMBI_API_KEY) \
-		$(IMAGE_NAME):$(IMAGE_TAG)
+		docker.io/$(IMAGE_NAME):$(IMAGE_TAG)
 
 .PHONY: run-influx
 run-influx: build
@@ -25,7 +25,7 @@ run-influx: build
 		-e AMBI_API_KEY=$(AMBI_API_KEY) \
 		-e INFLUX_ENABLE=True \
 		-e INFLUX_HOST=$(INFLUX_HOST) \
-		$(IMAGE_NAME):$(IMAGE_TAG)
+		docker.io/$(IMAGE_NAME):$(IMAGE_TAG)
 
 .PHONY: compose-up
 compose-up: build
