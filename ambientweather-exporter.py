@@ -48,7 +48,6 @@ class FormatInflux(object):
         self.logger.info(
             f"Creating InfluxDB database {self.args.influx_host}:{self.args.influx_port}/{self.args.influx_db}"
         )
-        self.logger.info(urllib.parse.quote(f"q=CREATE DATABASE ambientweather"))
         r = requests.post(
             f"http://{self.args.influx_host}:{self.args.influx_port}/query",
             data={"q": f"CREATE DATABASE {self.args.influx_db}"},
@@ -181,9 +180,9 @@ class GetArgs(object):
         )
         self.parser.add_argument(
             "--influx-enable",
-            help="Enable InfluxDB exporting (default True)",
+            help="Enable InfluxDB exporting (default False)",
             action="store_true",
-            default=os.getenv("INFLUX_ENABLE", True),
+            default=os.getenv("INFLUX_ENABLE", False),
         )
         self.parser.add_argument(
             "--influx-host",
@@ -200,6 +199,12 @@ class GetArgs(object):
             "--influx-db",
             help="InfluxDB database (default 'ambientweather')",
             default=os.getenv("INFLUX_DB", "ambientweather"),
+        )
+        self.parser.add_argument(
+            "--influx-interval",
+            help="InfluxDB sending interval (default 300s)",
+            type=int,
+            default=os.getenv("INFLUX_INTERVAL", 300),
         )
         self.args = self.parser.parse_args()
 
@@ -235,6 +240,10 @@ class GetArgs(object):
     def influx_db(self):
         return self.args.influx_db
 
+    @property
+    def influx_interval(self):
+        return self.args.influx_interval
+
 
 class RunServer(object):
     def __init__(self, logger, args):
@@ -242,6 +251,22 @@ class RunServer(object):
         self.logger = logger
         self.args = args
         self.aw = AmbientWeather(logger, args)
+        self.logger.info("Starting server")
+
+        if self.args.influx_enable and self.args.influx_interval:
+            self.logger.info(
+                f"Sending Influx metrics every {self.args.influx_interval} seconds"
+            )
+            influx = FormatInflux(self.logger, self.args, None)
+            influx.create_database()
+            while True:
+                self.logger.info(
+                    f"Sleeping for {self.args.influx_interval} seconds before sending to Influx"
+                )
+                time.sleep(self.args.influx_interval)
+                weather_data = self.aw.fetch_weather()
+                influx = FormatInflux(self.logger, self.args, weather_data)
+                influx.post_metrics()
 
         @self.app.route("/")
         @self.app.route("/metrics")
@@ -257,11 +282,11 @@ class RunServer(object):
         @self.app.route("/influxdb")
         def influx():
             self.logger.info("Influx metrics requested")
-            weather_data = self.aw.fetch_weather()
-            influx = FormatInflux(self.logger, self.args, weather_data)
-            influx.create_database()
-            metrics = influx.get_metrics()
             if self.args.influx_enable:
+                weather_data = self.aw.fetch_weather()
+                influx = FormatInflux(self.logger, self.args, weather_data)
+                influx.create_database()
+                metrics = influx.get_metrics()
                 influx.post_metrics()
                 self.logger.info(f"Shipped {len(metrics)} metrics to Influx")
                 return "\n".join(metrics) + "\n"
@@ -269,7 +294,6 @@ class RunServer(object):
                 self.logger.info(f"Influx is not enabled")
                 return "Influx is not enabled; run with --influx-enable\n"
 
-        self.logger.info("Starting server")
         self.app.run(debug=True, host=self.args.listen_on, port=self.args.listen_port)
 
 

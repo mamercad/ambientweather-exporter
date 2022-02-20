@@ -8,12 +8,13 @@ services:
   exporter:
     image: ghcr.io/mamercad/ambientweather-exporter:latest
     ports:
-      - "${EXPORTER_PORT:-10102}:${EXPORTER_PORT:-10102}"
+      - "${LISTEN_PORT:-10102}:${LISTEN_PORT:-10102}"
     environment:
       LISTEN_ON: 0.0.0.0
       LISTEN_PORT: 10102
       AMBI_APP_KEY: ${AMBI_APP_KEY}
       AMBI_API_KEY: ${AMBI_API_KEY}
+      INFLUX_ENABLE: "True"
       INFLUX_HOST: ${INFLUX_HOST:-influxdb}
       INFLUX_PORT: ${INFLUX_PORT:-8086}
       INFLUX_DB: ${INFLUX_DB:-ambientweather}
