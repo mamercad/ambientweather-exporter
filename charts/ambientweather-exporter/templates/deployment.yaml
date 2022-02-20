@@ -1,5 +1,5 @@
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ .Release.Name }}"
   namespace: "{{ .Release.Namespace }}"
@@ -37,11 +37,3 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-creds"
                   key: AMBI_API_KEY
-            - name: INFLUX_ENABLE
-              value: "{{ .Values.influx.enable }}"
-            - name: INFLUX_HOST
-              value: "{{ .Values.influx.host }}"
-            - name: INFLUX_PORT
-              value: "{{ .Values.influx.port }}"
-            - name: INFLUX_DB
-              value: "{{ .Values.influx.db }}"
