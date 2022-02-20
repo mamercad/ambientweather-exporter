@@ -4,11 +4,9 @@ import argparse
 import json.decoder
 import logging
 import os
-from pydoc import describe
 import requests
 import sys
 import time
-import urllib
 from flask import Flask
 
 
