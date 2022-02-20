@@ -200,7 +200,7 @@ class GetArgs(object):
         )
         self.parser.add_argument(
             "--influx-interval",
-            help="InfluxDB sending interval (default 300s)",
+            help="InfluxDB sending interval in seconds (default 300)",
             type=int,
             default=os.getenv("INFLUX_INTERVAL", 300),
         )
@@ -243,28 +243,62 @@ class GetArgs(object):
         return self.args.influx_interval
 
 
-class RunServer(object):
+class RunInflux(object):
     def __init__(self, logger, args):
-        self.app = Flask(__name__)
         self.logger = logger
         self.args = args
+        self.influx_host = self.args.influx_host
+        self.influx_port = self.args.influx_port
+        self.influx_interval = self.args.influx_interval
+        self.logger.info("Starting Influx shipper")
         self.aw = AmbientWeather(logger, args)
-        self.logger.info("Starting server")
+        self.ping()
+        self.ship()
 
-        if self.args.influx_enable and self.args.influx_interval:
+    def ping(self):
+        try:
+            ping_endpoint = f"http://{self.influx_host}:{self.influx_port}/ping"
+            r = requests.get(ping_endpoint)
+            status_code = r.status_code
+            if status_code != 204:
+                self.logger.error(
+                    f"Unhappy {status_code} from Influx at {ping_endpoint}"
+                )
+                sys.exit(1)
+            else:
+                self.logger.info(f"Happy {status_code} from Influx at {ping_endpoint}")
+        except requests.exceptions.RequestException as e:  # This is the correct syntax
+            self.logger.error(f"Could not connect to Influx at {ping_endpoint}")
+            raise SystemExit(e)
+
+    def ship(self):
+        if self.influx_interval < 0:
+            self.logger.error("Influx sleep interval cannot be negative")
+        elif self.influx_interval == 0:
+            self.logger.error("Influx sleep interval is zero")
+        else:
             self.logger.info(
-                f"Sending Influx metrics every {self.args.influx_interval} seconds"
+                f"Shipping Influx metrics every {self.influx_interval} seconds"
             )
             influx = FormatInflux(self.logger, self.args, None)
             influx.create_database()
             while True:
                 self.logger.info(
-                    f"Sleeping for {self.args.influx_interval} seconds before sending to Influx"
+                    f"Sleeping for {self.args.influx_interval} seconds before shipping to Influx"
                 )
-                time.sleep(self.args.influx_interval)
+                time.sleep(self.influx_interval)
                 weather_data = self.aw.fetch_weather()
                 influx = FormatInflux(self.logger, self.args, weather_data)
                 influx.post_metrics()
+
+
+class RunPrometheus(object):
+    def __init__(self, logger, args):
+        self.app = Flask(__name__)
+        self.logger = logger
+        self.args = args
+        self.aw = AmbientWeather(logger, args)
+        self.logger.info("Starting Prometheus exporter")
 
         @self.app.route("/")
         @self.app.route("/metrics")
@@ -276,26 +310,13 @@ class RunServer(object):
             self.logger.info(f"Prometheus scraped {len(metrics)} metrics from us")
             return "\n".join(metrics) + "\n"
 
-        @self.app.route("/influx")
-        @self.app.route("/influxdb")
-        def influx():
-            self.logger.info("Influx metrics requested")
-            if self.args.influx_enable:
-                weather_data = self.aw.fetch_weather()
-                influx = FormatInflux(self.logger, self.args, weather_data)
-                influx.create_database()
-                metrics = influx.get_metrics()
-                influx.post_metrics()
-                self.logger.info(f"Shipped {len(metrics)} metrics to Influx")
-                return "\n".join(metrics) + "\n"
-            else:
-                self.logger.info(f"Influx is not enabled")
-                return "Influx is not enabled; run with --influx-enable\n"
-
         self.app.run(debug=True, host=self.args.listen_on, port=self.args.listen_port)
 
 
 if __name__ == "__main__":
     logger = SetupLogger()
     args = GetArgs()
-    ws = RunServer(logger, args)
+    if args.influx_enable:
+        RunInflux(logger, args)
+    else:
+        RunPrometheus(logger, args)
