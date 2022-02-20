@@ -10,7 +10,7 @@ push: build
 
 .PHONY: compose
 compose:
-	docker-compose up
+	docker compose up
 
 .PHONY: install
 install:
