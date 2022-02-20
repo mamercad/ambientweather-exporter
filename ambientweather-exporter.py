@@ -17,17 +17,23 @@ class FormatInflux(object):
         self.args = args
         self.weather_data = weather_data
 
+    def sanitize(self, metric):
+        m = str(metric)
+        m = m.replace(" ", "_")
+        m = m.replace(",", "_")
+        return m
+
     def get_metrics(self):
         self.logger.info("Formatting Influx metrics")
         influx_metrics = []
         tagset = 'macAddress="{}",name="{}",lat="{}",lon="{}",address="{}",location="{}",tz="{}"'.format(
-            self.weather_data["macAddress"],
-            self.weather_data["info"]["name"],
-            self.weather_data["info"]["coords"]["coords"]["lat"],
-            self.weather_data["info"]["coords"]["coords"]["lon"],
-            self.weather_data["info"]["coords"]["address"],
-            self.weather_data["info"]["coords"]["location"],
-            self.weather_data["lastData"]["tz"],
+            self.sanitize(self.weather_data["macAddress"]),
+            self.sanitize(self.weather_data["info"]["name"]),
+            self.sanitize(self.weather_data["info"]["coords"]["coords"]["lat"]),
+            self.sanitize(self.weather_data["info"]["coords"]["coords"]["lon"]),
+            self.sanitize(self.weather_data["info"]["coords"]["address"]),
+            self.sanitize(self.weather_data["info"]["coords"]["location"]),
+            self.sanitize(self.weather_data["lastData"]["tz"]),
         )
         for k in self.weather_data["lastData"].keys():
             if k not in ["lastRain", "tz", "date"]:
@@ -36,6 +42,30 @@ class FormatInflux(object):
                 )
         self.logger.info(f"Returning {len(influx_metrics)} metrics for Influx")
         return influx_metrics
+
+    def post_metrics(self):
+        self.logger.info("Sending Influx metrics")
+        influx_metrics = self.get_metrics()
+        for metric in influx_metrics:
+            self.logger.info(metric)
+            r = requests.post(
+                f"http://{self.args.influx_host}:{self.args.influx_port}/write?db={self.args.influx_db}",
+                data=metric,
+            )
+            status_code = r.status_code
+            if status_code != 204:
+                if status_code == 404:
+                    self.logger.info(
+                        f"Got a {status_code} from InfluxDB at {self.args.influx_host}:{self.args.influx_port}/{self.args.influx_db}; create the database"
+                    )
+                else:
+                    self.logger.info(
+                        f"Got a {status_code} from InfluxDB at {self.args.influx_host}:{self.args.influx_port}/{self.args.influx_db}; {metric}"
+                    )
+            else:
+                self.logger.info(
+                    f"Sent {metric} to InfluxDB at {self.args.influx_host}:{self.args.influx_port}/{self.args.influx_db}"
+                )
 
 
 class FormatPrometheus(object):
@@ -135,9 +165,9 @@ class GetArgs(object):
         )
         self.parser.add_argument(
             "--influx-enable",
-            help="Enable InfluxDB exporting (default False)",
+            help="Enable InfluxDB exporting (default True)",
             action="store_true",
-            default=os.getenv("INFLUX_ENABLE", False),
+            default=os.getenv("INFLUX_ENABLE", True),
         )
         self.parser.add_argument(
             "--influx-host",
@@ -173,6 +203,22 @@ class GetArgs(object):
     def ambi_api_key(self):
         return self.args.ambi_api_key
 
+    @property
+    def influx_enable(self):
+        return self.args.influx_enable
+
+    @property
+    def influx_host(self):
+        return self.args.influx_host
+
+    @property
+    def influx_port(self):
+        return self.args.influx_port
+
+    @property
+    def influx_db(self):
+        return self.args.influx_db
+
 
 class RunServer(object):
     def __init__(self, logger, args):
@@ -198,8 +244,15 @@ class RunServer(object):
             weather_data = self.aw.fetch_weather()
             influx = FormatInflux(self.logger, self.args, weather_data)
             metrics = influx.get_metrics()
-            self.logger.info(f"Shipped {len(metrics)} metrics to Influx")
-            return "\n".join(metrics) + "\n"
+
+            if self.args.influx_enable:
+                influx.post_metrics()
+                self.logger.info(f"Shipped {len(metrics)} metrics to Influx")
+                return "\n".join(metrics) + "\n"
+            else:
+                self.logger.info(f"Influx is not enabled")
+                return "Influx is not enabled; run with --influx-enable\n"
+
             # metrics = ambientweather_influx()
             # logger.info(f"Shipped {len(metrics)} metrics to InfluxDB")
             # for metric in metrics:
@@ -212,7 +265,7 @@ class RunServer(object):
             #             f"Got a {status_code} from InfluxDB at {influx_host}:{influx_port}"
             #         )
 
-        self.logger.info("starting")
+        self.logger.info("Starting server")
         self.app.run(debug=True, host=self.args.listen_on, port=self.args.listen_port)
 
 
