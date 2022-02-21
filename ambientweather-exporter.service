@@ -1,5 +1,5 @@
 [Unit]
-Description=AmbientWeather Prometheus Exporter
+Description=AmbientWeather Prometheus and InfluxDB Exporter
 After=network.target
 StartLimitIntervalSec=0
 

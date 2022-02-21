@@ -1,40 +1,119 @@
 # ambientweather-exporter
 
-Simple Python/Flask exporter for [AmbientWeather](https://ambientweather.net) that can be scraped by [Prometheus](https://prometheus.io). With that said, you'll need `flask` installed. I've also added support for pushing to [InfluxDB](https://www.influxdata.com/products/influxdb-overview/), but, I haven't tested it, let me know (you can set `$INFLUX_HOST`, `$INFLUX_PORT`, and `$INFLUX_DB` to override the defaults, `influxdb`, `8086`, `ambientweather`, respectively). The endpoints `/influx` or `/influxdb` will trigger the sending.
+Simple Python/Flask exporter for [AmbientWeather](https://ambientweather.net) for [Prometheus](https://prometheus.io/) and [InfluxDB](https://www.influxdata.com/).
+You can use it to pull (for Prometheus) and push (for InfluxDB) metrics from your personal weather station.
+You will need to set up [AmbientWeather](https://ambientweather.docs.apiary.io/#introduction/authentication) application and API keys.
+Take it easy on the AmbientWeather API; it's the weather, it doesn't change that quickly *smile* (you'll get a `429` if you hit their limits).
 
-## Environment variables
 
-Read up on this [here](https://ambientweather.docs.apiary.io/#introduction/authentication) and then:
-
-```bash
-$ export AMBI_API_KEY=<REDACTED>
-$ export AMBI_APP_KEY=<REDACTED>
-$ ./ambientweather-exporter.py
-* Serving Flask app "ambientweather-exporter" (lazy loading)
-* Environment: production
-WARNING: This is a development server. Do not use it in a production deployment.
-Use a production WSGI server instead.
-* Debug mode: on
-* Running on http://0.0.0.0:10102/ (Press CTRL+C to quit)
-* Restarting with stat
-* Debugger is active!
-* Debugger PIN: 150-675-683
-127.0.0.1 - - [08/Sep/2020 16:49:10] "GET / HTTP/1.1" 200 -
-```
-
-From a client:
+## Metrics (Prometheus)
 
 ```bash
-$ curl -s http://localhost:10102 2>&1 | tail -3
-ambientweather_dewPoint{macAddress="REDACTED",name="CLOUDMASON",lat="REDACTED",lon="REDACTED",address="REDACTED",location="REDACTED",tz="America/Detroit"} 53.01
-ambientweather_feelsLikein{macAddress="REDACTED",name="CLOUDMASON",lat="REDACTED",lon="REDACTED",address="REDACTED",location="REDACTED",tz="America/Detroit"} 67.3
-ambientweather_dewPointin{macAddress="REDACTED",name="CLOUDMASON",lat="REDACTED",lon="REDACTED",address="REDACTED",location="REDACTED",tz="America/Detroit"} 49.6
+❯ curl -s localhost:10102 | head -1
+ambientweather_dateutc{macAddress="...",name="...",lat="...",lon="...",address="...",location="...",tz="..."} 1645376160000
+ambientweather_tempinf{macAddress="...",name="...",lat="...",lon="...",address="...",location="...",tz="..."} 66.9
+ambientweather_humidityin{macAddress="...",name="...",lat="...",lon="...",address="...",location="...",tz="..."} 37
 ```
+
+## Metrics (Influx)
+
+```bash
+❯ curl -s localhost:10102/influx | head -3
+ambientweather_dateutc,macAddress="...",name="...",lat="...",lon="...",address="...",location="...",tz="..." value=1645376820000 1645376888607487600
+ambientweather_tempinf,macAddress="...",name="...",lat="...",lon="...",address="...",location="...",tz="..." value=66.7 1645376888607507600
+ambientweather_humidityin,macAddress="...",name="...",lat="...",lon="...",address="...",location="...",tz="..." value=37 1645376888607516200
+```
+
+## Help
+
+```bash
+❯ python3 ./ambientweather-exporter.py --help
+usage: ambientweather-exporter.py [-h] [--listen-on LISTEN_ON]
+                                  [--listen-port LISTEN_PORT]
+                                  [--ambi-app-key AMBI_APP_KEY]
+                                  [--ambi-api-key AMBI_API_KEY]
+                                  [--influx-enable]
+                                  [--influx-host INFLUX_HOST]
+                                  [--influx-port INFLUX_PORT]
+                                  [--influx-db INFLUX_DB]
+                                  [--influx-interval INFLUX_INTERVAL]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --listen-on LISTEN_ON
+                        IP address to listen on (default $LISTEN_ON if set,
+                        else, '0.0.0.0')
+  --listen-port LISTEN_PORT
+                        Port to listen on (default 10102)
+  --ambi-app-key AMBI_APP_KEY
+                        AmbientWeather application key
+  --ambi-api-key AMBI_API_KEY
+                        AmbientWeather API key
+  --influx-enable       Enable InfluxDB exporting (default False)
+  --influx-host INFLUX_HOST
+                        InfluxDB host (default 'influxdb')
+  --influx-port INFLUX_PORT
+                        InfluxDB port (default 8086)
+  --influx-db INFLUX_DB
+                        InfluxDB database (default 'ambientweather')
+  --influx-interval INFLUX_INTERVAL
+                        InfluxDB sending interval (default 300s)
+```
+
+## Python
+
+```bash
+❯ pip3 install -r requirements.txt
+...
+
+❯ AMBI_APP_KEY=hunter2 AMBI_API_KEY=hunter2 python3 ./ambientweather-exporter.py
+INFO:ambientweather-exporter:Starting server
+ * Serving Flask app "ambientweather-exporter" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+INFO:werkzeug: * Running on http://0.0.0.0:10102/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+INFO:ambientweather-exporter:Starting server
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 999-984-877
+```
+
+## Docker
+
+Run a Prometheus exporter on `10102/tcp`:
+
+```bash
+❯ docker run -it -p 10102:10102/tcp \
+    -e AMBI_APP_KEY=$AMBI_APP_KEY \
+    -e AMBI_API_KEY=$AMBI_API_KEY \
+    mamercad/ambientweather-exporter:latest
+...
+```
+
+Run a InfluxDB shipper (every 900s):
+
+```bash
+❯ docker run -it \
+    -e AMBI_APP_KEY=$AMBI_APP_KEY \
+    -e AMBI_API_KEY=$AMBI_API_KEY \
+    -e INFLUX_ENABLE=True \
+    -e INFLUX_HOST=influxdb.example.com \
+    -e INFLUX_PORT=8086 \
+    -e INFLUX_INTERVAL=900
+    mamercad/ambientweather-exporter:latest
+...
+```
+
+## Docker Compose
+
+There is a [docker-compose.yml](./docker-compose.yml) to check out.
 
 ## Helm
 
-[Helm](https://helm.sh) must be installed to use the charts.  Please refer to
-Helm's [documentation](https://helm.sh/docs) to get started.
+[Helm](https://helm.sh) must be installed to use the charts.
+Please refer to Helm's [documentation](https://helm.sh/docs) to get started.
 
 Once Helm has been set up correctly, add the repo as follows:
 

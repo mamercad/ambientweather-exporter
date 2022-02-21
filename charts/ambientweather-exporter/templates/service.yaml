@@ -3,6 +3,9 @@ kind: Service
 metadata:
   name: "{{ .Release.Name }}"
   namespace: "{{ .Release.Namespace }}"
+  annotations:
+    prometheus.io/port: "{{ .Values.service.exporter_port }}"
+    prometheus.io/scrape: "true"
   labels:
     deploy: "{{ .Release.Name }}"
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"

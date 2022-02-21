@@ -11,6 +11,8 @@ secret:
   ambi_api_key: hunter2
 
 influx:
+  enable: false
   host: influxdb
   port: 8086
   db: ambientweather
+  interval: 300
