@@ -1,5 +1,8 @@
 IMAGE_NAME := mamercad/ambientweather-exporter
+
+ifeq ($(IMAGE_TAG),)
 IMAGE_TAG := latest
+endif
 
 .PHONY: build
 build:
