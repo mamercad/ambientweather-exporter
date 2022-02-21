@@ -45,3 +45,14 @@ install:
 	systemctl daemon-reload
 	systemctl enable ambientweather-exporter
 	systemctl start ambientweather-exporter
+
+.PHONY: helm-local
+helm-local:
+	helm install my-ambientweather-exporter \
+	  --namespace ambientweather --create-namespace \
+		--set deployment.tag="$(IMAGE_TAG)" \
+	  --set service.type="LoadBalancer" \
+	  --set secret.ambi_app_key="$(AMBI_APP_KEY)" \
+	  --set secret.ambi_api_key="$(AMBI_API_KEY)" \
+		--set influx.enable=false \
+		./charts/ambientweather-exporter
